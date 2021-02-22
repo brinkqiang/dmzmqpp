@@ -74,8 +74,8 @@ set( ZEROMQ_INCLUDE_DIR   ""      CACHE PATH "The include directory for ZMQ" )
 set( IS_TRAVIS_CI_BUILD   true    CACHE BOOL "Defines TRAVIS_CI_BUILD - Should the tests avoid running cases where memory is scarce." )
 
 # Find zmq.h and add its dir to the includes
-find_path(ZEROMQ_INCLUDE zmq.h PATHS ${ZEROMQ_INCLUDE_DIR})
-include_directories(${ZEROMQ_INCLUDE_DIR} ${ZEROMQ_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR}/src )
+#find_path(ZEROMQ_INCLUDE zmq.h PATHS ${ZEROMQ_INCLUDE_DIR})
+#include_directories(${ZEROMQ_INCLUDE_DIR} ${ZEROMQ_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR}/src )
 
 # Do not run some tests when building on travis-ci (this cause oom error and kill the test
 # process)
