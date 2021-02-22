@@ -29,11 +29,19 @@ int main(int argc, char *argv[]) {
 
   // send a message
   cout << "Sending text and a number..." << endl;
-  zmqpp::message message;
-  // compose a message from a string and a number
-  message << "Hello World!" << 42;
-  socket.send(message);
-  
+
+  for (;;)
+  {
+      zmqpp::message message;
+      // compose a message from a string and a number
+      message << "Hello World!" << 42;
+
+      if (!socket.send(message))
+      {
+         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+  }
+
   cout << "Sent message." << endl;
   cout << "Finished." << endl;
 }

@@ -29,13 +29,22 @@ int main(int argc, char *argv[]) {
 
   // receive the message
   cout << "Receiving message..." << endl;
-  zmqpp::message message;
-  // decompose the message 
-  socket.receive(message);
-  string text;
-  int number;
-  message >> text >> number;
 
-  cout << "Received text:\"" << text << "\" and a number: " << number << endl;
-  cout << "Finished." << endl;
+  for (;;)
+  {
+      zmqpp::message message;
+      // decompose the message 
+
+      if (!socket.receive(message))
+      {
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          continue;
+      }
+      string text;
+      int number;
+      message >> text >> number;
+
+      cout << "Received text:\"" << text << "\" and a number: " << number << endl;
+      cout << "Finished." << endl;
+  }
 }
