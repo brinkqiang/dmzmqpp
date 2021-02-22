@@ -1335,17 +1335,17 @@ if(MSVC)
 
   if(BUILD_STATIC)
     add_library(libzmq-static STATIC ${sources} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
-    set_target_properties(
-      libzmq-static
-      PROPERTIES PUBLIC_HEADER "${public_headers}"
-                 RELEASE_POSTFIX "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
-                 RELWITHDEBINFO_POSTFIX
-                 "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
-                 MINSIZEREL_POSTFIX
-                 "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
-                 DEBUG_POSTFIX "${MSVC_TOOLSET}-mt-sgd-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
-                 COMPILE_FLAGS "/DZMQ_STATIC"
-                 OUTPUT_NAME "lib${ZMQ_OUTPUT_BASENAME}")
+    #set_target_properties(
+    #  libzmq-static
+    #  PROPERTIES PUBLIC_HEADER "${public_headers}"
+    #             RELEASE_POSTFIX "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
+    #             RELWITHDEBINFO_POSTFIX
+    #             "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
+    #             MINSIZEREL_POSTFIX
+    #             "${MSVC_TOOLSET}-mt-s-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
+    #             DEBUG_POSTFIX "${MSVC_TOOLSET}-mt-sgd-${ZMQ_VERSION_MAJOR}_${ZMQ_VERSION_MINOR}_${ZMQ_VERSION_PATCH}"
+    #             COMPILE_FLAGS "/DZMQ_STATIC"
+    #             OUTPUT_NAME "lib${ZMQ_OUTPUT_BASENAME}")
   endif()
 else()
   # avoid building everything twice for shared + static only on *nix, as Windows needs different preprocessor defines in
