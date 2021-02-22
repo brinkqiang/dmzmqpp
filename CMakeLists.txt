@@ -19,6 +19,8 @@ INCLUDE(cmake/ModuleImport.cmake)
 INCLUDE(cmake/ModuleCompileOptions.cmake)
 ModuleSetCompileOptions()
 
+ModuleImport("dmlibzmq" "thirdparty/dmlibzmq")
+
 enable_testing()
 
 # prepare C++11
