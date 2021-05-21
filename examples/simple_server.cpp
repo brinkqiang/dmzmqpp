@@ -11,40 +11,189 @@
 #include <string>
 #include <iostream>
 
-using namespace std;
+#include "dmutil.h"
+#include "dmtimermodule.h"
+#include "dmsingleton.h"
+#include "dmthread.h"
+#include "dmconsole.h"
+#include "dmtypes.h"
 
-int main(int argc, char *argv[]) {
-  const string endpoint = "tcp://*:4242";
+class CPlayer : public CDMTimerNode
+{
+public:
+    virtual void OnTimer(uint64_t qwIDEvent);
+};
 
-  // initialize the 0MQ context
-  zmqpp::context context;
+class CMain :
+    public IDMConsoleSink,
+    public IDMThread,
+    public CDMThreadCtrl,
+    public CDMTimerNode,
+    public TSingleton<CMain>
+{
+    friend class TSingleton<CMain>;
 
-  // generate a pull socket
-  zmqpp::socket_type type = zmqpp::socket_type::pull;
-  zmqpp::socket socket (context, type);
+    enum
+    {
+        eMAX_PLAYER = 100 * 10000,
+        eMAX_PLAYER_EVENT = 10,
+    };
 
-  // bind to the socket
-  cout << "Binding to " << endpoint << "..." << endl;
-  socket.bind(endpoint);
+    typedef enum
+    {
+        eTimerID_UUID = 0,
+        eTimerID_STOP,
+    } ETimerID;
 
-  // receive the message
-  cout << "Receiving message..." << endl;
+    typedef enum
+    {
+        eTimerTime_UUID = 1000,
+        eTimerTime_STOP = 200000,
+    } ETimerTime;
 
-  for (;;)
-  {
-      zmqpp::message message;
-      // decompose the message 
+public:
 
-      if (!socket.receive(message))
-      {
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-          continue;
-      }
-      string text;
-      int number;
-      message >> text >> number;
+    virtual void ThrdProc()
+    {
 
-      cout << "Received text:\"" << text << "\" and a number: " << number << endl;
-      cout << "Finished." << endl;
-  }
+        const std::string endpoint = "tcp://*:4242";
+
+        // bind to the socket
+        std::cout << "Binding to " << endpoint << "..." << std::endl;
+        m_socket.bind(endpoint);
+
+        std::cout << "test start" << std::endl;
+
+        SetTimer(eTimerID_UUID, eTimerTime_UUID,
+                 dm::any(std::string("hello world")));
+        SleepMs(300);
+        CDMTimerModule::Instance()->Run();
+
+        SetTimer(eTimerID_STOP, eTimerTime_STOP, eTimerTime_STOP * 2);
+        // test interface
+        uint64_t qwElapse = GetTimerElapse(eTimerID_UUID);
+        std::cout << "test GetTimerElapse: " << qwElapse << std::endl;
+        uint64_t qwRemain = GetTimerRemain(eTimerID_UUID);
+        std::cout << "test GetTimerRemain: " << qwRemain << std::endl;
+        CDMTimerElement* poElement = GetTimerElement(eTimerID_UUID);
+        bool bBusy = false;
+
+        while (!m_bStop)
+        {
+            bBusy = false;
+
+            if (CDMTimerModule::Instance()->Run())
+            {
+                bBusy = true;
+            }
+
+            if (__Run())
+            {
+                bBusy = true;
+            }
+
+            if (!bBusy)
+            {
+                SleepMs(1);
+            }
+        }
+
+        std::cout << "test stop" << std::endl;
+    }
+
+    virtual void Terminate()
+    {
+        m_bStop = true;
+    }
+
+    virtual void OnCloseEvent()
+    {
+        Stop();
+    }
+
+    virtual void OnTimer(uint64_t qwIDEvent, dm::any& oAny)
+    {
+        switch (qwIDEvent)
+        {
+        case eTimerID_UUID:
+        {
+            std::cout << DMFormatDateTime() << " " << CMain::Instance()->GetOnTimerCount()
+                      << " " << dm::any_cast<std::string>(oAny) << std::endl;
+        }
+        break;
+
+        case eTimerID_STOP:
+        {
+            std::cout << DMFormatDateTime() << " test stopping..." << std::endl;
+            Stop();
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
+
+    void AddOnTimerCount()
+    {
+        ++m_qwOnTimerCount;
+    }
+    uint64_t GetOnTimerCount()
+    {
+        uint64_t qwSCount = m_qwOnTimerCount - m_qwLastCount;
+
+        m_qwLastCount = m_qwOnTimerCount;
+        return qwSCount;
+    }
+private:
+    CMain()
+        : m_bStop(false), m_qwOnTimerCount(0), m_socket (m_context,
+                zmqpp::socket_type::pull), m_qwLastCount(0)
+    {
+        HDMConsoleMgr::Instance()->SetHandlerHook(this);
+    }
+
+    virtual ~CMain()
+    {
+
+    }
+
+private:
+    bool __Run()
+    {
+        zmqpp::message message;
+        // decompose the message
+
+        if (!m_socket.receive(message, true))
+        {
+            return false;
+        }
+
+        AddOnTimerCount();
+
+        return true;
+    }
+private:
+    volatile bool   m_bStop;
+
+    CPlayer m_oPlayers[eMAX_PLAYER];
+
+    uint64_t  m_qwOnTimerCount;
+    zmqpp::context m_context;
+    zmqpp::socket m_socket;
+
+
+    uint64_t  m_qwLastCount;
+};
+
+void CPlayer::OnTimer(uint64_t qwIDEvent)
+{
+
+}
+
+int main(int argc, char* argv[])
+{
+    CMain::Instance()->Start(CMain::Instance());
+    CMain::Instance()->WaitFor();
+    return 0;
 }

@@ -18,10 +18,14 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 INCLUDE(cmake/ModuleImport.cmake)
 INCLUDE(cmake/ModuleCompileOptions.cmake)
 ModuleSetCompileOptions()
+ModuleSetWinCompilerFlags()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+add_definitions("-DZMQ_BUILD_DRAFT_API")
+
 ModuleImport("dmlibzmq" "thirdparty/dmlibzmq")
+ModuleImport("dmtimer" "thirdparty/dmtimer")
 
 enable_testing()
 
@@ -133,7 +137,7 @@ if (ZMQPP_BUILD_STATIC)
   #endif()
   target_link_libraries(zmqpp-static libzmq-static)
   list( APPEND INSTALL_TARGET_LIST zmqpp-static)
-  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static )
+  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static dmtimer)
 endif() # ZMQPP_BUILD_STATIC
 
 # Shared lib
