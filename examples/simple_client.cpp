@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     {
         zmqpp::message message;
         // compose a message from a string and a number
-        message << "Hello World!" << 42;
+        message << "Hello World!";
 
         if (!socket.send(message))
         {

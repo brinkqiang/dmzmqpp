@@ -169,7 +169,10 @@ private:
             return false;
         }
 
-        AddOnTimerCount();
+        if (message.get(0) == "Hello World!")
+        {
+            AddOnTimerCount();
+        }
 
         return true;
     }
