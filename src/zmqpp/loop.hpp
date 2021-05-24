@@ -22,140 +22,150 @@
 namespace zmqpp
 {
 
-    class socket;
-    typedef socket socket_t;
+class socket;
+typedef socket socket_t;
+
+/**
+ * Loop object that helps to manage multiple socket by calling a user-defined handler for each socket
+ * when a watched event occurs.
+ * Calls assigned user-defined handler for timed events - repeaded and one-shot.
+ *
+ * It uses zmq::poller as the underlying polling mechanism.
+ */
+class loop
+{
+public:
+    /**
+     * Type used to identify created timers withing loop
+     */
+    typedef void* timer_id_t;
+    typedef std::function<bool (void) > Callable;
 
     /**
-     * Loop object that helps to manage multiple socket by calling a user-defined handler for each socket
-     * when a watched event occurs.
-     * Calls assigned user-defined handler for timed events - repeaded and one-shot.
-     *
-     * It uses zmq::poller as the underlying polling mechanism.
+     * Construct an empty polling model.
      */
-    class loop
+    ZMQPP_EXPORT loop();
+
+    /**
+     * Cleanup reactor.
+     *
+     * Any sockets will need to be closed separately.
+     */
+    ZMQPP_EXPORT virtual ~loop();
+
+    /**
+     * Add a socket to the loop, providing a handler that will be called when the monitored events occur.
+     *
+     * \param socket the socket to monitor.
+     * \param callable the function that will be called by the loop when a registered event occurs on socket.
+     * \param event the event flags to monitor on the socket.
+     */
+    ZMQPP_EXPORT void add(socket_t& socket, Callable callable,
+                          short const event = poller::poll_in);
+
+    /*!
+     * Add a standard socket to the loop, providing a handler that will be called when the monitored events occur.
+     *
+     * \param descriptor the standard socket to monitor (SOCKET under Windows, a file descriptor otherwise).
+     * \param callable the function that will be called by the loop when a registered event occurs on fd.
+     * \param event the event flags to monitor.
+     */
+    ZMQPP_EXPORT void add(raw_socket_t const descriptor, Callable callable,
+                          short const event = poller::poll_in | poller::poll_error);
+
+    /**
+     * Add a timed event to the loop, providing a handler that will be called when timer fires.
+     *
+     * \param delay time after which handler will be executed.
+     * \param times how many times should timer be reneved - 0 for infinte ammount.
+     * \param callable the function that will be called by the loop after delay.
+     */
+    ZMQPP_EXPORT timer_id_t add(std::chrono::milliseconds delay, size_t times,
+                                Callable callable);
+
+    /**
+     * Reset timer in the loop, it will start counting delay time again. Times argument is preserved.
+     *
+     * \param timer identifier in the loop.
+     */
+    ZMQPP_EXPORT void reset(timer_id_t const timer);
+
+    /**
+     * Remove timer event from the loop.
+     *
+     * \param timer identifier in the loop.
+     */
+    ZMQPP_EXPORT void remove(timer_id_t const timer);
+
+    /**
+     * Stop monitoring a socket.
+     *
+     * \param socket the socket to stop monitoring.
+     */
+    ZMQPP_EXPORT void remove(socket_t const& socket);
+
+    /**
+     * Stop monitoring a standard socket.
+     *
+     * \param descriptor the standard socket to stop monitoring.
+     */
+    ZMQPP_EXPORT void remove(raw_socket_t const descriptor);
+
+    /**
+     * Starts loop. It will block until one of handlers returns false.
+     */
+    ZMQPP_EXPORT void start();
+
+
+    /**
+     * Starts one poll loop.
+     */
+    ZMQPP_EXPORT int poll(int event);
+private:
+    struct timer_t
     {
-    public:
-        /**
-         * Type used to identify created timers withing loop
-         */
-        typedef void * timer_id_t;
-        typedef std::function<bool (void) > Callable;
+        size_t times;
+        std::chrono::milliseconds delay;
+        std::chrono::steady_clock::time_point when;
 
-        /**
-         * Construct an empty polling model.
-         */
-        ZMQPP_EXPORT loop();
+        timer_t(size_t times, std::chrono::milliseconds delay);
 
-        /**
-         * Cleanup reactor.
-         *
-         * Any sockets will need to be closed separately.
-         */
-        ZMQPP_EXPORT virtual ~loop();
-
-        /**
-         * Add a socket to the loop, providing a handler that will be called when the monitored events occur.
-         *
-         * \param socket the socket to monitor.
-         * \param callable the function that will be called by the loop when a registered event occurs on socket.
-         * \param event the event flags to monitor on the socket.
-         */
-        ZMQPP_EXPORT void add(socket_t& socket, Callable callable, short const event = poller::poll_in);
-
-        /*!
-         * Add a standard socket to the loop, providing a handler that will be called when the monitored events occur.
-         *
-         * \param descriptor the standard socket to monitor (SOCKET under Windows, a file descriptor otherwise).
-         * \param callable the function that will be called by the loop when a registered event occurs on fd.
-         * \param event the event flags to monitor.
-         */
-        ZMQPP_EXPORT void add(raw_socket_t const descriptor, Callable callable, short const event = poller::poll_in | poller::poll_error);
-
-        /**
-         * Add a timed event to the loop, providing a handler that will be called when timer fires.
-         *
-         * \param delay time after which handler will be executed.
-         * \param times how many times should timer be reneved - 0 for infinte ammount.
-         * \param callable the function that will be called by the loop after delay.
-         */
-        ZMQPP_EXPORT timer_id_t add(std::chrono::milliseconds delay, size_t times, Callable callable);
-
-        /**
-         * Reset timer in the loop, it will start counting delay time again. Times argument is preserved.
-         *
-         * \param timer identifier in the loop.
-         */
-        ZMQPP_EXPORT void reset(timer_id_t const timer);
-
-        /**
-         * Remove timer event from the loop.
-         *
-         * \param timer identifier in the loop.
-         */
-        ZMQPP_EXPORT void remove(timer_id_t const timer);
-
-        /**
-         * Stop monitoring a socket.
-         *
-         * \param socket the socket to stop monitoring.
-         */
-        ZMQPP_EXPORT void remove(socket_t const& socket);
-
-        /**
-         * Stop monitoring a standard socket.
-         *
-         * \param descriptor the standard socket to stop monitoring.
-         */
-        ZMQPP_EXPORT void remove(raw_socket_t const descriptor);
-
-        /**
-         * Starts loop. It will block until one of handlers returns false.
-         */
-        ZMQPP_EXPORT void start();
-
-    private:
-        struct timer_t {
-            size_t times;
-            std::chrono::milliseconds delay;
-            std::chrono::steady_clock::time_point when;
-
-            timer_t(size_t times, std::chrono::milliseconds delay);
-
-            void reset();
-            void update();
-        };
-
-        typedef std::pair<zmq_pollitem_t, Callable> PollItemCallablePair;
-        typedef std::pair<std::unique_ptr<timer_t>, Callable> TimerItemCallablePair;
-        static bool TimerItemCallablePairComp(const TimerItemCallablePair &lhs, const TimerItemCallablePair &rhs);
-
-        std::vector<PollItemCallablePair> items_;
-        std::list<TimerItemCallablePair> timers_;
-        std::vector<const socket_t *> sockRemoveLater_;
-        std::vector<raw_socket_t> fdRemoveLater_;
-        std::vector<timer_id_t> timerRemoveLater_;
-
-
-        void add(const zmq_pollitem_t &item, Callable callable);
-        void add(std::unique_ptr<timer_t>, Callable callable);
-
-        bool start_handle_timers();
-        bool start_handle_poller();
-
-        /**
-        * Flush the fdRemoveLater_ and sockRemoveLater_ vector, effectively removing
-        * the item for the reactor and poller.
-        */
-        void flush_remove_later();
-
-        /**
-        * Calculate min time to wait in poller.
-        */
-        long tickless();
-
-        poller poller_;
-        bool dispatching_;
-        bool rebuild_poller_;
+        void reset();
+        void update();
     };
+
+    typedef std::pair<zmq_pollitem_t, Callable> PollItemCallablePair;
+    typedef std::pair<std::unique_ptr<timer_t>, Callable> TimerItemCallablePair;
+    static bool TimerItemCallablePairComp(const TimerItemCallablePair& lhs,
+                                          const TimerItemCallablePair& rhs);
+
+    std::vector<PollItemCallablePair> items_;
+    std::list<TimerItemCallablePair> timers_;
+    std::vector<const socket_t*> sockRemoveLater_;
+    std::vector<raw_socket_t> fdRemoveLater_;
+    std::vector<timer_id_t> timerRemoveLater_;
+
+
+    void add(const zmq_pollitem_t& item, Callable callable);
+    void add(std::unique_ptr<timer_t>, Callable callable);
+
+    bool start_handle_timers();
+    bool start_handle_poller();
+
+    /**
+    * Flush the fdRemoveLater_ and sockRemoveLater_ vector, effectively removing
+    * the item for the reactor and poller.
+    */
+    void flush_remove_later();
+
+    /**
+    * Calculate min time to wait in poller.
+    */
+    long tickless();
+
+    poller poller_;
+    bool dispatching_;
+    bool rebuild_poller_;
+};
 
 }

@@ -26,6 +26,7 @@ add_definitions("-DZMQ_BUILD_DRAFT_API")
 
 ModuleImport("dmlibzmq" "thirdparty/dmlibzmq")
 ModuleImport("dmtimer" "thirdparty/dmtimer")
+ModuleImport("dmmsgparser" "thirdparty/dmmsgparser")
 
 enable_testing()
 
@@ -137,7 +138,7 @@ if (ZMQPP_BUILD_STATIC)
   #endif()
   target_link_libraries(zmqpp-static libzmq-static)
   list( APPEND INSTALL_TARGET_LIST zmqpp-static)
-  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static dmtimer)
+  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static dmtimer dmmsgparser dmsys libprotobuf libprotoc)
 endif() # ZMQPP_BUILD_STATIC
 
 # Shared lib
@@ -152,7 +153,7 @@ if (ZMQPP_BUILD_SHARED)
     target_link_libraries(zmqpp libzmq)
   endif()
   list( APPEND INSTALL_TARGET_LIST zmqpp)
-  set( LIB_TO_LINK_TO_EXAMPLES zmqpp )
+  set( LIB_TO_LINK_TO_EXAMPLES zmqpp dmtimer dmmsgparser dmsys libprotobuf libprotoc)
 endif() # ZMQPP_BUILD_SHARED
 
 # We need to link zmqpp to ws2_32 on windows for the implementation of winsock2.h
@@ -172,22 +173,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # --------
 
 if(ZMQPP_BUILD_EXAMPLES)
-  find_package(Threads REQUIRED)
-
-  set (ZMQPP_EXAMPLES
-    simple_server
-    simple_client
-    grasslands
-    strawhouse
-    woodhouse
-    ironhouse
-    ironhouse2)
-
-  foreach( ZMQPP_EXAMPLE ${ZMQPP_EXAMPLES} )
-    add_executable( zmqpp-example-${ZMQPP_EXAMPLE}  examples/${ZMQPP_EXAMPLE}.cpp )
-    target_link_libraries( zmqpp-example-${ZMQPP_EXAMPLE} ${LIB_TO_LINK_TO_EXAMPLES} ${CMAKE_THREAD_LIBS_INIT})
-    list( APPEND INSTALL_TARGET_LIST zmqpp-example-${ZMQPP_EXAMPLE} )
-  endforeach()
+  ExeImport("examples" "${LIB_TO_LINK_TO_EXAMPLES};${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
 
