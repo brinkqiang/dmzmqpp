@@ -10,6 +10,7 @@
 #include <zmqpp/zmqpp.hpp>
 #include <string>
 #include <iostream>
+#include "dmmsgparsertest/person.pb.h"
 
 using namespace std;
 
@@ -21,7 +22,7 @@ int main(int argc, char* argv[])
     zmqpp::context context;
 
     // generate a push socket
-    zmqpp::socket_type type = zmqpp::socket_type::push;
+    zmqpp::socket_type type = zmqpp::socket_type::client;
     zmqpp::socket socket (context, type);
 
     // open the connection
@@ -34,8 +35,20 @@ int main(int argc, char* argv[])
     for (;;)
     {
         zmqpp::message message;
-        // compose a message from a string and a number
-        message << "Hello World!";
+
+        db::tb_Person tb;
+
+        tb.set_uuid(1);
+        tb.set_job(2);
+
+        tb.set_name("tom");
+        tb.set_number(1366532956);
+        tb.set_email("tom@163.com");
+        tb.set_phonetype(db::PhoneType::MOBILE);
+        tb.set_money(10000);
+        tb.set_cash(10000);
+
+        message << tb.SerializeAsString();
 
         if (!socket.send(message))
         {

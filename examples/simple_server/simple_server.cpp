@@ -17,6 +17,7 @@
 #include "dmthread.h"
 #include "dmconsole.h"
 #include "dmtypes.h"
+#include "dmmsgparsertest/person.pb.h"
 
 class CPlayer : public CDMTimerNode
 {
@@ -60,7 +61,11 @@ public:
 
         // bind to the socket
         std::cout << "Binding to " << endpoint << "..." << std::endl;
+        m_context.set(zmqpp::context_option::io_threads,
+                      std::thread::hardware_concurrency());
         m_socket.bind(endpoint);
+        m_looper.add(m_socket, std::bind(&CMain::handle_message, std::ref(m_socket)),
+                     zmqpp::poller::poll_in | zmqpp::poller::poll_error);
 
         std::cout << "test start" << std::endl;
 
@@ -111,6 +116,45 @@ public:
         Stop();
     }
 
+    static bool handle_message(zmqpp::socket& socket)
+    {
+        bool busy = false;
+
+        for (int i=0; i < 10000; i++)
+        {
+            zmqpp::message msg;
+            auto res = socket.receive(msg, true);
+
+            if (res)
+            {
+                busy = true;
+
+                db::tb_Person tb;
+
+                tb.set_uuid(1);
+                tb.set_job(2);
+
+                tb.set_name("tom");
+                tb.set_number(1366532956);
+                tb.set_email("tom@163.com");
+                tb.set_phonetype(db::PhoneType::MOBILE);
+                tb.set_money(10000);
+                tb.set_cash(10000);
+
+                if (msg.get(0) == tb.SerializeAsString())
+                {
+                    CMain::Instance()->AddOnTimerCount();
+                }
+
+                continue;
+            }
+
+            break;
+        }
+
+        return busy;
+    }
+
     virtual void OnTimer(uint64_t qwIDEvent, dm::any& oAny)
     {
         switch (qwIDEvent)
@@ -148,7 +192,7 @@ public:
 private:
     CMain()
         : m_bStop(false), m_qwOnTimerCount(0), m_socket (m_context,
-                zmqpp::socket_type::pull), m_qwLastCount(0)
+                zmqpp::socket_type::server), m_qwLastCount(0)
     {
         HDMConsoleMgr::Instance()->SetHandlerHook(this);
     }
@@ -161,17 +205,11 @@ private:
 private:
     bool __Run()
     {
-        zmqpp::message message;
-        // decompose the message
+        int event = m_looper.poll(1000);
 
-        if (!m_socket.receive(message, true))
+        if (event == 0)
         {
             return false;
-        }
-
-        if (message.get(0) == "Hello World!")
-        {
-            AddOnTimerCount();
         }
 
         return true;
@@ -185,6 +223,7 @@ private:
     zmqpp::context m_context;
     zmqpp::socket m_socket;
 
+    zmqpp::loop m_looper;
 
     uint64_t  m_qwLastCount;
 };
