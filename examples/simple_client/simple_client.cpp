@@ -17,6 +17,7 @@ DEFINE_string(URL, "tcp://localhost:4242", "url");
 
 int main(int argc, char* argv[])
 {
+    DMFLAGS_INIT(argc, argv);
     const std::string endpoint = FLAGS_URL;
 
     // initialize the 0MQ context

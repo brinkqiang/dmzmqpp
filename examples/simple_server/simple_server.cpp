@@ -240,6 +240,7 @@ void CPlayer::OnTimer(uint64_t qwIDEvent)
 
 int main(int argc, char* argv[])
 {
+    DMFLAGS_INIT(argc, argv);
     CMain::Instance()->Start(CMain::Instance());
     CMain::Instance()->WaitFor();
     return 0;
