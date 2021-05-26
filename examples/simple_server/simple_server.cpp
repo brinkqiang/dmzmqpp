@@ -19,6 +19,10 @@
 #include "dmtypes.h"
 #include "dmmsgparsertest/person.pb.h"
 
+#include "dmflags.h"
+
+DEFINE_string(URL, "tcp://*:4242", "url");
+
 class CPlayer : public CDMTimerNode
 {
 public:
@@ -57,7 +61,7 @@ public:
     virtual void ThrdProc()
     {
 
-        const std::string endpoint = "tcp://*:4242";
+        const std::string endpoint = FLAGS_URL;
 
         // bind to the socket
         std::cout << "Binding to " << endpoint << "..." << std::endl;
@@ -232,6 +236,7 @@ void CPlayer::OnTimer(uint64_t qwIDEvent)
 {
 
 }
+
 
 int main(int argc, char* argv[])
 {

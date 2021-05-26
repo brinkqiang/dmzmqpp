@@ -11,12 +11,13 @@
 #include <string>
 #include <iostream>
 #include "dmmsgparsertest/person.pb.h"
+#include "dmflags.h"
 
-using namespace std;
+DEFINE_string(URL, "tcp://localhost:4242", "url");
 
 int main(int argc, char* argv[])
 {
-    const string endpoint = "tcp://localhost:4242";
+    const std::string endpoint = FLAGS_URL;
 
     // initialize the 0MQ context
     zmqpp::context context;
@@ -26,11 +27,11 @@ int main(int argc, char* argv[])
     zmqpp::socket socket (context, type);
 
     // open the connection
-    cout << "Opening connection to " << endpoint << "..." << endl;
+    std::cout << "Opening connection to " << endpoint << "..." << std::endl;
     socket.connect(endpoint);
 
     // send a message
-    cout << "Sending text and a number..." << endl;
+    std::cout << "Sending text and a number..." << std::endl;
 
     for (;;)
     {
@@ -56,6 +57,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    cout << "Sent message." << endl;
-    cout << "Finished." << endl;
+    std::cout << "Sent message." << std::endl;
+    std::cout << "Finished." << std::endl;
 }
