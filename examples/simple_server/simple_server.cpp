@@ -23,10 +23,47 @@
 
 DEFINE_string(URL, "tcp://*:4242", "url");
 
-class CPlayer : public CDMTimerNode
+#include "dmmsgparser.h"
+#include <memory>
+#include "person.msg.h"
+
+class CMain;
+
+class CPlayer : public CDMMsgParserSession
+    , public CDMDispatcher_db
+    , public zmqpp::socket
 {
 public:
-    virtual void OnTimer(uint64_t qwIDEvent);
+    CPlayer(zmqpp::context_t const& context, zmqpp::socket_type const type)
+        : zmqpp::socket(context, type)
+    {
+        CDMDispatcher_db::Init();
+    }
+
+    virtual ~CPlayer()
+    {
+    }
+
+    virtual void DMAPI OnMessage(uint16_t msgID, void* data, int size)
+    {
+        NetCall(msgID, data, size, this);
+    }
+
+    virtual bool DMAPI Send(const char* data, int size)
+    {
+        zmqpp::message message;
+        message.add_raw(data, size);
+        return send(message);
+    }
+
+    virtual int Ontb_Person(::google::protobuf::Message& msg, int nLen,
+                            const void* pObject);
+public:
+    template<class T>
+    bool DMAPI SendMsg(T& msg)
+    {
+        return CDMMsgParserSession::SendMsg(GetMsgID<T>(), msg);
+    }
 };
 
 class CMain :
@@ -37,12 +74,6 @@ class CMain :
     public TSingleton<CMain>
 {
     friend class TSingleton<CMain>;
-
-    enum
-    {
-        eMAX_PLAYER = 100 * 10000,
-        eMAX_PLAYER_EVENT = 10,
-    };
 
     typedef enum
     {
@@ -67,8 +98,9 @@ public:
         std::cout << "Binding to " << endpoint << "..." << std::endl;
         m_context.set(zmqpp::context_option::io_threads,
                       std::thread::hardware_concurrency());
-        m_socket.bind(endpoint);
-        m_looper.add(m_socket, std::bind(&CMain::handle_message, std::ref(m_socket)),
+        m_oPlayer.bind(endpoint);
+
+        m_looper.add(m_oPlayer, std::bind(&CMain::handle_message, std::ref(m_oPlayer)),
                      zmqpp::poller::poll_in | zmqpp::poller::poll_error);
 
         std::cout << "test start" << std::endl;
@@ -79,12 +111,7 @@ public:
         CDMTimerModule::Instance()->Run();
 
         SetTimer(eTimerID_STOP, eTimerTime_STOP, eTimerTime_STOP * 2);
-        // test interface
-        uint64_t qwElapse = GetTimerElapse(eTimerID_UUID);
-        std::cout << "test GetTimerElapse: " << qwElapse << std::endl;
-        uint64_t qwRemain = GetTimerRemain(eTimerID_UUID);
-        std::cout << "test GetTimerRemain: " << qwRemain << std::endl;
-        CDMTimerElement* poElement = GetTimerElement(eTimerID_UUID);
+
         bool bBusy = false;
 
         while (!m_bStop)
@@ -120,36 +147,19 @@ public:
         Stop();
     }
 
-    static bool handle_message(zmqpp::socket& socket)
+    static bool handle_message(CPlayer& player)
     {
         bool busy = false;
 
         for (int i=0; i < 10000; i++)
         {
-            zmqpp::message msg;
-            auto res = socket.receive(msg, true);
+            std::string strData;
+            auto res = player.receive(strData, true);
 
             if (res)
             {
                 busy = true;
-
-                db::tb_Person tb;
-
-                tb.set_uuid(1);
-                tb.set_job(2);
-
-                tb.set_name("tom");
-                tb.set_number(1366532956);
-                tb.set_email("tom@163.com");
-                tb.set_phonetype(db::PhoneType::MOBILE);
-                tb.set_money(10000);
-                tb.set_cash(10000);
-
-                if (msg.get(0) == tb.SerializeAsString())
-                {
-                    CMain::Instance()->AddOnTimerCount();
-                }
-
+                player.OnRecv(strData.data(), strData.size());
                 continue;
             }
 
@@ -195,8 +205,8 @@ public:
     }
 private:
     CMain()
-        : m_bStop(false), m_qwOnTimerCount(0), m_socket (m_context,
-                zmqpp::socket_type::server), m_qwLastCount(0)
+        : m_bStop(false), m_qwOnTimerCount(0), m_qwLastCount(0), m_oPlayer(m_context,
+                zmqpp::socket_type::server)
     {
         HDMConsoleMgr::Instance()->SetHandlerHook(this);
     }
@@ -221,22 +231,41 @@ private:
 private:
     volatile bool   m_bStop;
 
-    CPlayer m_oPlayers[eMAX_PLAYER];
-
     uint64_t  m_qwOnTimerCount;
     zmqpp::context m_context;
-    zmqpp::socket m_socket;
 
     zmqpp::loop m_looper;
 
     uint64_t  m_qwLastCount;
+
+    CPlayer m_oPlayer;
 };
 
-void CPlayer::OnTimer(uint64_t qwIDEvent)
+int CPlayer::Ontb_Person(::google::protobuf::Message& msg, int nLen,
+                         const void* pObject)
 {
+    ::db::tb_Person* pData = dynamic_cast<::db::tb_Person*>(&msg);
+    fmt::print(pData->Utf8DebugString());
 
+    db::tb_Person tb;
+
+    tb.set_uuid(1);
+    tb.set_job(2);
+
+    tb.set_name("tom");
+    tb.set_number(1366532956);
+    tb.set_email("tom@163.com");
+    tb.set_phonetype(db::PhoneType::MOBILE);
+    tb.set_money(10000);
+    tb.set_cash(10000);
+
+    if (pData->SerializeAsString() == tb.SerializeAsString())
+    {
+        CMain::Instance()->AddOnTimerCount();
+    }
+
+    return 0;
 }
-
 
 int main(int argc, char* argv[])
 {
