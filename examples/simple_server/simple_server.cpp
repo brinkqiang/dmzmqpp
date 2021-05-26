@@ -219,7 +219,7 @@ private:
 private:
     bool __Run()
     {
-        int event = m_looper.poll(10);
+        int event = m_looper.poll(100);
 
         if (event == 0)
         {
