@@ -219,7 +219,7 @@ private:
 private:
     bool __Run()
     {
-        int event = m_looper.poll(1);
+        int event = m_looper.poll(10);
 
         if (event == 0)
         {
@@ -245,7 +245,6 @@ int CPlayer::Ontb_Person(::google::protobuf::Message& msg, int nLen,
                          const void* pObject)
 {
     ::db::tb_Person* pData = dynamic_cast<::db::tb_Person*>(&msg);
-    fmt::print(pData->Utf8DebugString());
 
     db::tb_Person tb;
 
