@@ -226,6 +226,8 @@ private:
             return false;
         }
 
+        m_looper.poll(10);
+
         return true;
     }
 private:
