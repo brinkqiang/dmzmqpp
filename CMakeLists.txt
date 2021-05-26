@@ -23,7 +23,7 @@ ModuleSetWinCompilerFlags()
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 add_definitions("-DZMQ_BUILD_DRAFT_API")
-
+ModuleImport("dmflags" "thirdparty/dmflags")
 ModuleImport("dmlibzmq" "thirdparty/dmlibzmq")
 ModuleImport("dmtimer" "thirdparty/dmtimer")
 ModuleImport("dmmsgparser" "thirdparty/dmmsgparser")
@@ -138,7 +138,7 @@ if (ZMQPP_BUILD_STATIC)
   #endif()
   target_link_libraries(zmqpp-static libzmq-static)
   list( APPEND INSTALL_TARGET_LIST zmqpp-static)
-  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static dmtimer dmmsgparser dmsys libprotobuf libprotoc)
+  set( LIB_TO_LINK_TO_EXAMPLES zmqpp-static dmtimer dmmsgparser dmsys libprotobuf libprotoc dmflags)
 endif() # ZMQPP_BUILD_STATIC
 
 # Shared lib
@@ -153,7 +153,7 @@ if (ZMQPP_BUILD_SHARED)
     target_link_libraries(zmqpp libzmq)
   endif()
   list( APPEND INSTALL_TARGET_LIST zmqpp)
-  set( LIB_TO_LINK_TO_EXAMPLES zmqpp dmtimer dmmsgparser dmsys libprotobuf libprotoc)
+  set( LIB_TO_LINK_TO_EXAMPLES zmqpp dmtimer dmmsgparser dmsys libprotobuf libprotoc dmflags)
 endif() # ZMQPP_BUILD_SHARED
 
 # We need to link zmqpp to ws2_32 on windows for the implementation of winsock2.h
