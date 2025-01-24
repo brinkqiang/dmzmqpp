@@ -12,12 +12,12 @@
 
 rm -rf build
 mkdir -p build
-pushd build
+cd build
 
 cmake -DCMAKE_BUILD_TYPE=relwithdebinfo ..
 cmake --build . --config relwithdebinfo
 
-popd
+cd ..
 
 # popd
 # echo continue && read -n 1
