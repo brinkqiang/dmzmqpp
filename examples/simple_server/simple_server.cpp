@@ -99,7 +99,7 @@ public:
         m_context.set(zmqpp::context_option::io_threads,
                       std::thread::hardware_concurrency());
         m_oPlayer.bind(endpoint);
-
+        m_oPlayer.SessionInit(PROTO_STYLE_DMSTYLE);
         m_looper.add(m_oPlayer, std::bind(&CMain::handle_message, std::ref(m_oPlayer)),
                      zmqpp::poller::poll_in | zmqpp::poller::poll_error);
 

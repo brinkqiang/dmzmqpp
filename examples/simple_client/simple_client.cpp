@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
     std::cout << "Sending text and a number..." << std::endl;
 
     CPlayer oPlayer(socket);
+    oPlayer.SessionInit(PROTO_STYLE_DMSTYLE);
 
     for (;;)
     {
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
 
         if (!oPlayer.SendMsg(tb))
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 
