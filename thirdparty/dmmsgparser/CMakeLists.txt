@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.8)
 
 PROJECT(dmmsgparser)
 
@@ -6,6 +6,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 INCLUDE(cmake/ModuleImport.cmake)
 INCLUDE(cmake/ModuleCompileOptions.cmake)
 ModuleSetCompileOptions()
+ModuleSetWinCompilerFlags()
 
 SET(DMMSG_VERSION_MAJOR "1")
 SET(DMMSG_VERSION_MINOR "0")
@@ -18,7 +19,7 @@ OPTION(USE_DMMSG "use dmmsg" OFF)
 
 ModuleImport("dmlog" "thirdparty/dmlog")
 ModuleImport("dmsys" "thirdparty/dmsys")
-DllImportDepends("dmmsgparser" "src/dmmsgparser_module" "dmsys")
+LibImportDepends("dmmsgparser" "src/dmmsgparser" "dmsys")
 ExeImport("test" "dmmsgparser;dmsys;libprotobuf;libprotoc")
 
 #ADD_CUSTOM_COMMAND(

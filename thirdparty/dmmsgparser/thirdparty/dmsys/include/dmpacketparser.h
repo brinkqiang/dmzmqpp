@@ -17,9 +17,10 @@ public:
                                             uint16_t wMsgID) = 0;
     virtual int32_t DMAPI CheckPacketHeader(void* pHeader) = 0;
     virtual uint16_t DMAPI GetMsgID(void* pHeader) = 0;
+    virtual uint16_t DMAPI GetServiceID(void* pHeader) { return 0; }
 };
 
-static inline const char* memnctr(const char* src, size_t len, char flag)
+static inline const char* dm_memnctr(const char* src, size_t len, char flag)
 {
     for (size_t i=0; i < len; ++i)
     {
@@ -68,11 +69,11 @@ private:
     virtual ~HDMPacketParser() {}
 };
 
-class HNotParser :
+class HNothingParser :
     public IDMPacketParser,
-    public TSingleton<HNotParser>
+    public TSingleton<HNothingParser>
 {
-    friend class TSingleton<HNotParser>;
+    friend class TSingleton<HNothingParser>;
 public:
     virtual int32_t DMAPI ParsePacket(const char* pBuf, int32_t nLen)
     {
@@ -98,8 +99,8 @@ public:
         return 0;
     };
 private:
-    HNotParser() {}
-    virtual ~HNotParser() {}
+    HNothingParser() {}
+    virtual ~HNothingParser() {}
 };
 
 class HNCParser :
@@ -110,7 +111,7 @@ class HNCParser :
 public:
     virtual int32_t DMAPI ParsePacket(const char* pBuf, int32_t nLen)
     {
-        const char* p = memnctr(pBuf, nLen, '\n');
+        const char* p = dm_memnctr(pBuf, nLen, '\n');
 
         if (NULL == p)
         {
@@ -141,10 +142,30 @@ private:
     virtual ~HNCParser() {}
 };
 
+class HRpcPacketParser :
+	public IDMPacketParser,
+	public TSingleton<HRpcPacketParser>
+{
+	friend class TSingleton<HRpcPacketParser>;
+public:
+	virtual int32_t DMAPI ParsePacket(const char* pBuf, int32_t nLen);
+	virtual int32_t DMAPI GetPacketHeaderSize();
+	virtual int32_t DMAPI BuildPacketHeader(void* pHeader, int32_t nDataLen,
+		uint16_t wMsgID);
+	virtual int32_t DMAPI CheckPacketHeader(void* pHeader);
+	virtual uint16_t DMAPI GetMsgID(void* pHeader);
+    virtual uint16_t DMAPI GetServiceID(void* pHeader);
+private:
+    HRpcPacketParser() {}
+	virtual ~HRpcPacketParser() {}
+};
+
+
 typedef std::deque<std::string> DMMESSAGE_QUEUE;
 
 const int  DMSEND_BUF_MAX = 65535;
 const int  DMRECV_BUF_MAX = 65535;
+const int  DM_BUF_MAX = 65535;
 
 #endif // __DMPACKETPARSER_H_INCLUDE__
 

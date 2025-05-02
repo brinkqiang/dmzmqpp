@@ -129,3 +129,85 @@ uint16_t DMAPI HDMPacketParser::GetMsgID(void* pHeader)
 
     return ntohs(poHeader->wMsgID);
 }
+
+int32_t DMAPI HRpcPacketParser::ParsePacket(const char* pBuf, int32_t nLen)
+{
+	if (nLen < GetPacketHeaderSize())
+	{
+		return 0;
+	}
+
+    SDMRPCPacketHeader* pHeader = (SDMRPCPacketHeader*)pBuf;
+
+	int32_t nPacketLen = CheckPacketHeader(pHeader);
+
+	if (nPacketLen < 0)
+	{
+		return nPacketLen;
+	}
+
+	if (nPacketLen <= nLen)
+	{
+		return nPacketLen;
+	}
+
+	return 0;
+}
+
+int32_t DMAPI HRpcPacketParser::GetPacketHeaderSize()
+{
+    return sizeof(SDMRPCPacketHeader);
+}
+
+int32_t DMAPI HRpcPacketParser::BuildPacketHeader(void* pHeader, int32_t nDataLen, uint16_t wMsgID)
+{
+    SDMRPCPacketHeader* poHeader = (SDMRPCPacketHeader*)pHeader;
+	poHeader->wMark = PACKET_MARK;
+	poHeader->wCheckSum = ((nDataLen ^ PACKET_CHECKSUM1) & PACKET_CHECKSUM2);
+    poHeader->nDataLen = nDataLen;
+
+	poHeader->wMark = htons(poHeader->wMark);
+	poHeader->wCheckSum = htons(poHeader->wCheckSum);
+    poHeader->nDataLen = htonl(poHeader->nDataLen);
+	poHeader->wMsgID = htons(wMsgID);
+	poHeader->wServiceID = htons(poHeader->wServiceID);
+
+	return sizeof(*poHeader);
+}
+
+int32_t DMAPI HRpcPacketParser::CheckPacketHeader(void* pHeader)
+{
+    SDMRPCPacketHeader* poHeader = (SDMRPCPacketHeader*)pHeader;
+	uint16_t wMark = ntohs(poHeader->wMark);
+	uint16_t wCheckSum = ntohs(poHeader->wCheckSum);
+    int32_t nDataLen = ntohl(poHeader->nDataLen);
+
+	if (PACKET_MARK != wMark)
+	{
+		return PACKET_MARK_ERROR;
+	}
+
+	uint16_t wCheckSum2 = ((nDataLen ^ PACKET_CHECKSUM1) &
+		PACKET_CHECKSUM2);
+
+	if (wCheckSum2 != wCheckSum)
+	{
+		return PACKET_CHECKSUM_ERROR;
+	}
+
+	return sizeof(*poHeader) + nDataLen;
+}
+
+uint16_t DMAPI HRpcPacketParser::GetMsgID(void* pHeader)
+{
+    SDMRPCPacketHeader* poHeader = (SDMRPCPacketHeader*)pHeader;
+
+	return ntohs(poHeader->wMsgID);
+}
+
+uint16_t DMAPI HRpcPacketParser::GetServiceID(void* pHeader)
+{
+	SDMRPCPacketHeader* poHeader = (SDMRPCPacketHeader*)pHeader;
+
+	return ntohs(poHeader->wServiceID);
+}

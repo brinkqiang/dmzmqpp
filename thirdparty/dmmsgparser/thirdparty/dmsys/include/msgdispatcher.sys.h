@@ -47,7 +47,7 @@ public:
     class MsgGuard
     {
     public:
-        MsgGuard(CDMCF_msgperformance& oConfig, uint16_t wMsgID, ::google::protobuf::Message& msg, int nLen)
+        MsgGuard(CDMCF_msgperformance& oConfig, uint16_t wMsgID, ::google::protobuf::Message* msg, int nLen)
         : m_oConfig(oConfig), m_wMsgID(wMsgID), m_msg(msg), m_nLen(nLen), m_dwStart(0), m_msgpf(NULL)
         {
             auto it = m_oConfig.GetMeta().mutable_map_xmsg()->find(wMsgID);
@@ -84,7 +84,7 @@ public:
         int m_nLen;
         uint32_t m_dwStart;
         ::msgperformance::dmnode_xmsg* m_msgpf;
-		::google::protobuf::Message& m_msg;
+		::google::protobuf::Message*  m_msg;
     };
 
 public:
@@ -93,6 +93,8 @@ public:
         m_nMsgCount = 0;
         memset(m_arFunctions, 0, sizeof(m_arFunctions));
         memset(m_arMsgSizes, 0, sizeof(m_arMsgSizes));
+
+        Register(0, &T::OnMsgZero, 0);
     }
 
     virtual ~TMsgDispatcherPB()
@@ -136,6 +138,11 @@ public:
         return m_arFunctions[wMsgID];
     }
 
+    virtual int OnMsgZero(::google::protobuf::Message& msg, int nLen, const void* pObject = NULL)
+    {
+        return 0;
+    }
+
     int Call(uint16_t wMsgID, ::google::protobuf::Message& msg, int nLen, const void* pObject = NULL)
     {
         MSG_FUNC pFunc = Find(wMsgID);
@@ -146,9 +153,20 @@ public:
         return (static_cast<T*>(this)->*pFunc)(msg, nLen, pObject);
     }
 
+    virtual int OnNetRawCall(uint16_t wMsgID, void* pData, int nLen, const void* pObject)
+    {
+        return 0;
+    }
+
+    int NetRawCall(uint16_t wMsgID, void* pData, int nLen, const void* pObject)
+    {
+        MsgGuard oGuard(m_msgperformance, wMsgID, nullptr, nLen);
+        return OnNetRawCall(wMsgID, pData, nLen, pObject);
+    }
+
     int MGCall(uint16_t wMsgID, ::google::protobuf::Message& msg, int nLen, const void* pObject = NULL)
     {
-        MsgGuard oGuard(m_msgperformance, wMsgID, msg, nLen);
+        MsgGuard oGuard(m_msgperformance, wMsgID, &msg, nLen);
         return Call(wMsgID, msg, nLen, pObject);
     }
 

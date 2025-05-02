@@ -1,51 +1,52 @@
-
+﻿#include <memory>
 #include "dmmsgparser.h"
-#include <memory>
 #include "person.msg.h"
 
 class CPlayer : public CDMMsgParserSession
     , public CDMDispatcher_db
 {
 public:
-    CPlayer()
-    {
-        CDMDispatcher_db::Init();
-    }
-
-    virtual ~CPlayer()
-    {
-    }
+    CPlayer(){ }
+    virtual ~CPlayer(){}
 
     virtual void DMAPI OnMessage(uint16_t msgID, void* data, int size)
     {
-        NetCall(msgID, data, size, this);
+        int ret = NetCall(msgID, data, size, this);
     }
-    
+
     virtual bool DMAPI Send(const char* data, int size)
     {
         return 0 == OnRecv(data, size);
     }
-
     virtual int Ontb_Person(::google::protobuf::Message& msg, int nLen, const void* pObject)
     {
         ::db::tb_Person* pData = dynamic_cast<::db::tb_Person*>(&msg);
         fmt::print(pData->Utf8DebugString());
         return 0;
     }
+
+	virtual int OnNetRawCall(uint16_t wMsgID, void* pData, int nLen, const void* pObject)
+	{
+		return 0;
+	}
+
 public:
     template<class T>
     bool DMAPI SendMsg(T& msg)
     {
-	    return CDMMsgParserSession::SendMsg(GetMsgID<T>(), msg);
+        return CDMMsgParserSession::SendMsg(GetMsgID<T>(), msg);
     }
 
 };
 
-using namespace std;
-
-int main( int argc, char* argv[] ) {
+int main(int argc, char* argv[]) {
 
     CPlayer oPlayer;
+
+    if (!oPlayer.SessionInit(PROTO_STYLE_DMSTYLE))
+    {
+        return -1;
+    }
 
     db::tb_Person tb;
 

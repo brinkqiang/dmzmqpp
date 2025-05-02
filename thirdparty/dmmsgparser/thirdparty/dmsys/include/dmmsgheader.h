@@ -27,6 +27,17 @@ typedef struct tagDMPacketHeader
     uint16_t wMsgID;
 } SDMPacketHeader;
 
+typedef struct tagDMRpcPacketHeader
+{
+	uint16_t wMark;
+	uint16_t wCheckSum;
+	int32_t nDataLen;
+	uint16_t wMsgID;
+    uint16_t wServiceID;
+} SDMRPCPacketHeader;
+
+// 关于  wMark, wCheckSum tcp本身保证了传输的正确性， 该校验是为了快速过滤判断非法协议
+
 #define MAX_NET_BUF_SIZE (512 * 1024)
 
 #define DMNET_TEST_PORT 8345
