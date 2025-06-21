@@ -1,23 +1,16 @@
 #!/bin/bash
 
-# - install depends tools
-# yum -y install git
-# yum -y install gcc gcc-c++ autoconf libtool automake make
-#
-
-# pushd thirdparty/depends_path
-# libtoolize && aclocal && autoheader && autoconf && automake --add-missing
-# sh configure
-# popd
-
 rm -rf build
 mkdir -p build
+
+# pushd build
 cd build
 
-cmake -DCMAKE_BUILD_TYPE=relwithdebinfo ..
-cmake --build . --config relwithdebinfo
-
+# -DCMAKE_EXPORT_COMPILE_COMMANDS=ON option is implemented only by Makefile Generators and Ninja Generators.
+cmake -DCMAKE_BUILD_TYPE=relwithdebinfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+cmake --build . --config relwithdebinfo -- -j$(nproc)
+echo "cd build && ctest -C relwithdebinfo --output-on-failure --output-junit report.xml && cd .."
+# popd
 cd ..
 
-# popd
 # echo continue && read -n 1
